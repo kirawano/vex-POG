@@ -7,3 +7,6 @@ The best **bot** that you have ever seen. The best of the best.
 I now play
 
 # Exodia, the Forbidden One
+
+
+<span style="color:blue">some *blue* text</span>.
