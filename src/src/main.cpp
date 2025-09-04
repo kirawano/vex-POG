@@ -14,21 +14,21 @@ constexpr bool LEFT_REVERSED  = false;
 constexpr bool RIGHT_REVERSED = true;   // Typically true for mirrored sides
 
 // Expo + smoothing tuning
-constexpr double JOYSTICK_DEADBAND = 0.05; // ignore tiny stick noise
-constexpr double EXPO_AMOUNT       = 0.35; // 0.0 = linear, 1.0 = very curved
-constexpr double SMOOTH_ALPHA      = 0.22; // 0.05..0.3; higher = snappier
+constexpr double JOYSTICK_DEADBAND = 0.08; // ignore tiny stick noise
+constexpr double EXPO_AMOUNT       = 0.45; // 0.0 = linear, 1.0 = very curved
+constexpr double SMOOTH_ALPHA      = 0.20; // 0.05..0.3; higher = snappier
 // =================================
 
 // Controller
 pros::Controller master(pros::E_CONTROLLER_MASTER);
 
 // Drive motors (18:1 green, encoders in degrees)
-pros::Motor mLF(LF_PORT, pros::E_MOTOR_GEARSET_18, LEFT_REVERSED,  pros::E_MOTOR_ENCODER_DEGREES);
-pros::Motor mLM(LM_PORT, pros::E_MOTOR_GEARSET_18, LEFT_REVERSED,  pros::E_MOTOR_ENCODER_DEGREES);
-pros::Motor mLR(LR_PORT, pros::E_MOTOR_GEARSET_18, LEFT_REVERSED,  pros::E_MOTOR_ENCODER_DEGREES);
-pros::Motor mRF(RF_PORT, pros::E_MOTOR_GEARSET_18, RIGHT_REVERSED, pros::E_MOTOR_ENCODER_DEGREES);
-pros::Motor mRM(RM_PORT, pros::E_MOTOR_GEARSET_18, RIGHT_REVERSED, pros::E_MOTOR_ENCODER_DEGREES);
-pros::Motor mRR(RR_PORT, pros::E_MOTOR_GEARSET_18, RIGHT_REVERSED, pros::E_MOTOR_ENCODER_DEGREES);
+pros::Motor mLF(LF_PORT, pros::E_MOTOR_GEARSET_06, LEFT_REVERSED,  pros::E_MOTOR_ENCODER_DEGREES);
+pros::Motor mLM(LM_PORT, pros::E_MOTOR_GEARSET_06, LEFT_REVERSED,  pros::E_MOTOR_ENCODER_DEGREES);
+pros::Motor mLR(LR_PORT, pros::E_MOTOR_GEARSET_06, LEFT_REVERSED,  pros::E_MOTOR_ENCODER_DEGREES);
+pros::Motor mRF(RF_PORT, pros::E_MOTOR_GEARSET_06, RIGHT_REVERSED, pros::E_MOTOR_ENCODER_DEGREES);
+pros::Motor mRM(RM_PORT, pros::E_MOTOR_GEARSET_06, RIGHT_REVERSED, pros::E_MOTOR_ENCODER_DEGREES);
+pros::Motor mRR(RR_PORT, pros::E_MOTOR_GEARSET_06, RIGHT_REVERSED, pros::E_MOTOR_ENCODER_DEGREES);
 
 // Helpers
 inline double clamp(double x, double lo, double hi) { return std::fmax(lo, std::fmin(hi, x)); }
