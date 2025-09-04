@@ -1,94 +1,129 @@
 #include "main.h"
+#include <cmath>
+#include "config.hpp"
 
-/**
- * A callback function for LLEMU's center button.
- *
- * When this callback is fired, it will toggle line 2 of the LCD text between
- * "I was pressed!" and nothing.
- */
-void on_center_button() {
-	static bool pressed = false;
-	pressed = !pressed;
-	if (pressed) {
-		pros::lcd::set_text(2, "I was pressed!");
-	} else {
-		pros::lcd::clear_line(2);
-	}
+constexpr bool LEFT_REVERSED  = false;
+constexpr bool RIGHT_REVERSED = true;   // Typically true for mirrored sides
+
+// Expo + smoothing tuning
+constexpr double JOYSTICK_DEADBAND = 0.05; // ignore tiny stick noise
+constexpr double EXPO_AMOUNT       = 0.35; // 0.0 = linear, 1.0 = very curved
+constexpr double SMOOTH_ALPHA      = 0.22; // 0.05..0.3; higher = snappier
+// =================================
+
+// Controller
+pros::Controller master(pros::E_CONTROLLER_MASTER);
+
+// Drive motors (06:1 green, encoders in degrees)
+pros::Motor mLF(LF_PORT, pros::E_MOTOR_GEARSET_06, LEFT_REVERSED,  pros::E_MOTOR_ENCODER_DEGREES);
+pros::Motor mLM(LM_PORT, pros::E_MOTOR_GEARSET_06, LEFT_REVERSED,  pros::E_MOTOR_ENCODER_DEGREES);
+pros::Motor mLR(LR_PORT, pros::E_MOTOR_GEARSET_06, LEFT_REVERSED,  pros::E_MOTOR_ENCODER_DEGREES);
+pros::Motor mRF(RF_PORT, pros::E_MOTOR_GEARSET_06, RIGHT_REVERSED, pros::E_MOTOR_ENCODER_DEGREES);
+pros::Motor mRM(RM_PORT, pros::E_MOTOR_GEARSET_06, RIGHT_REVERSED, pros::E_MOTOR_ENCODER_DEGREES);
+pros::Motor mRR(RR_PORT, pros::E_MOTOR_GEARSET_06, RIGHT_REVERSED, pros::E_MOTOR_ENCODER_DEGREES);
+
+// Helpers
+inline double clamp(double x, double lo, double hi) { return std::fmax(lo, std::fmin(hi, x)); }
+inline double deadband(double x, double th) { return (std::fabs(x) < th) ? 0.0 : x; }
+
+// Signed power for "expo" curve (nonlinear joystick feel)
+// e in [1,3] typical; we blend linear with cubic using EXPO_AMOUNT for simplicity
+inline double expoCurve(double x, double expoAmount) {
+  // Blend: (1-expo)*x + expo*x^3 -> smooth near center, full near edges
+  return (1.0 - expoAmount) * x + expoAmount * x * x * x;
 }
 
-/**
- * Runs initialization code. This occurs as soon as the program is started.
- *
- * All other competition modes are blocked by initialize; it is recommended
- * to keep execution time for this mode under a few seconds.
- */
+// Exponential smoother (first-order IIR): y += alpha * (target - y)
+struct ExpSmoother {
+  double y = 0.0;
+  double alpha = SMOOTH_ALPHA;
+  void reset(double v = 0.0) { y = v; }
+  double step(double target) {
+    y += alpha * (target - y);
+    return y;
+  }
+};
+
+// Set both sides with voltage (-12000..12000)
+void driveVoltage(int left_mV, int right_mV) {
+  mLF.move_voltage(left_mV);
+  mLM.move_voltage(left_mV);
+  mLR.move_voltage(left_mV);
+  mRF.move_voltage(right_mV);
+  mRM.move_voltage(right_mV);
+  mRR.move_voltage(right_mV);
+}
+
+void driveStop(pros::motor_brake_mode_e brake = pros::E_MOTOR_BRAKE_COAST) {
+  mLF.set_brake_mode(brake); mLM.set_brake_mode(brake); mLR.set_brake_mode(brake);
+  mRF.set_brake_mode(brake); mRM.set_brake_mode(brake); mRR.set_brake_mode(brake);
+  driveVoltage(0, 0);
+}
+
+// Arcade mix: forward [-1..1], turn [-1..1] -> left/right [-1..1]
+inline void arcadeMix(double forward, double turn, double &left, double &right) {
+  left  = clamp(forward + turn, -1.0, 1.0);
+  right = clamp(forward - turn, -1.0, 1.0);
+}
+
+// Simple timed move with smoothing (rudimentary autonomous helper)
+void driveTimed(int ms, double forward, double turn = 0.0) {
+  ExpSmoother lS, rS;
+  const int dt = 10;
+  double lT, rT;
+  arcadeMix(forward, turn, lT, rT);
+  for (int t = 0; t < ms; t += dt) {
+    int l_mV = static_cast<int>(lS.step(lT) * 12000.0);
+    int r_mV = static_cast<int>(rS.step(rT) * 12000.0);
+    driveVoltage(l_mV, r_mV);
+    pros::delay(dt);
+  }
+  driveStop(pros::E_MOTOR_BRAKE_COAST);
+}
+
 void initialize() {
-	pros::lcd::initialize();
-	pros::lcd::set_text(1, "Hello PROS User!");
-
-	pros::lcd::register_btn1_cb(on_center_button);
+  // Set initial brake modes
+  mLF.set_brake_mode(pros::E_MOTOR_BRAKE_COAST);
+  mLM.set_brake_mode(pros::E_MOTOR_BRAKE_COAST);
+  mLR.set_brake_mode(pros::E_MOTOR_BRAKE_COAST);
+  mRF.set_brake_mode(pros::E_MOTOR_BRAKE_COAST);
+  mRM.set_brake_mode(pros::E_MOTOR_BRAKE_COAST);
+  mRR.set_brake_mode(pros::E_MOTOR_BRAKE_COAST);
 }
 
-/**
- * Runs while the robot is in the disabled state of Field Management System or
- * the VEX Competition Switch, following either autonomous or opcontrol. When
- * the robot is enabled, this task will exit.
- */
 void disabled() {}
-
-/**
- * Runs after initialize(), and before autonomous when connected to the Field
- * Management System or the VEX Competition Switch. This is intended for
- * competition-specific initialization routines, such as an autonomous selector
- * on the LCD.
- *
- * This task will exit when the robot is enabled and autonomous or opcontrol
- * starts.
- */
 void competition_initialize() {}
 
-/**
- * Runs the user autonomous code. This function will be started in its own task
- * with the default priority and stack size whenever the robot is enabled via
- * the Field Management System or the VEX Competition Switch in the autonomous
- * mode. Alternatively, this function may be called in initialize or opcontrol
- * for non-competition testing purposes.
- *
- * If the robot is disabled or communications is lost, the autonomous task
- * will be stopped. Re-enabling the robot will restart the task, not re-start it
- * from where it left off.
- */
-void autonomous() {}
+void autonomous() {
+  // Example: smooth forward, pause, smooth turn, stop
+  driveTimed(1200, 0.8, 0.0); // forward 80% for 1.2s
+  pros::delay(200);
+  driveTimed(700, 0.0, 0.6);  // turn right 60% for 0.7s
+  driveStop(pros::E_MOTOR_BRAKE_BRAKE);
+}
 
-/**
- * Runs the operator control code. This function will be started in its own task
- * with the default priority and stack size whenever the robot is enabled via
- * the Field Management System or the VEX Competition Switch in the operator
- * control mode.
- *
- * If no competition control is connected, this function will run immediately
- * following initialize().
- *
- * If the robot is disabled or communications is lost, the
- * operator control task will be stopped. Re-enabling the robot will restart the
- * task, not resume it from where it left off.
- */
 void opcontrol() {
-	pros::Controller master(pros::E_CONTROLLER_MASTER);
-	pros::MotorGroup left_mg({1, -2, 3});    // Creates a motor group with forwards ports 1 & 3 and reversed port 2
-	pros::MotorGroup right_mg({-4, 5, -6});  // Creates a motor group with forwards port 5 and reversed ports 4 & 6
+  ExpSmoother leftS, rightS;
+  const int loopMs = 10;
 
+  while (true) {
+    // Read sticks, normalize to [-1..1]
+    double fwd = -master.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y) / 127.0;  // up is negative -> invert
+    double trn =  master.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_X) / 127.0;
 
-	while (true) {
-		pros::lcd::print(0, "%d %d %d", (pros::lcd::read_buttons() & LCD_BTN_LEFT) >> 2,
-		                 (pros::lcd::read_buttons() & LCD_BTN_CENTER) >> 1,
-		                 (pros::lcd::read_buttons() & LCD_BTN_RIGHT) >> 0);  // Prints status of the emulated screen LCDs
+    // Deadband then expo curve
+    fwd = expoCurve(deadband(fwd, JOYSTICK_DEADBAND), EXPO_AMOUNT);
+    trn = expoCurve(deadband(trn, JOYSTICK_DEADBAND), EXPO_AMOUNT);
 
-		// Arcade control scheme
-		int dir = master.get_analog(ANALOG_LEFT_Y);    // Gets amount forward/backward from left joystick
-		int turn = master.get_analog(ANALOG_RIGHT_X);  // Gets the turn left/right from right joystick
-		left_mg.move(dir - turn);                      // Sets left motor voltage
-		right_mg.move(dir + turn);                     // Sets right motor voltage
-		pros::delay(20);                               // Run for 20 ms then update
-	}
+    // Mix to sides
+    double lTarget, rTarget;
+    arcadeMix(fwd, trn, lTarget, rTarget);
+
+    // Exponential speed increase (smoothing)
+    int l_mV = static_cast<int>(leftS.step(lTarget) * 12000.0);
+    int r_mV = static_cast<int>(rightS.step(rTarget) * 12000.0);
+
+    driveVoltage(l_mV, r_mV);
+    pros::delay(loopMs);
+  }
 }
