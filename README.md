@@ -9,4 +9,4 @@ I now play
 # Exodia, the Forbidden One
 
 
-<span style="color:blue">some *blue* text</span>.
+
