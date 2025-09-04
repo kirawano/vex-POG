@@ -2,7 +2,7 @@
 #include <cmath>
 
 // ============ CONFIG ============
-// Update these to match your robot ports and directions.
+// Update these to match robot ports and directions.
 constexpr int LF_PORT = 1;  // Left front
 constexpr int LM_PORT = 2;  // Left back/middle
 constexpr int LR_PORT = 3;  // Left top/rear
