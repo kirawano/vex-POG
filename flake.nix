@@ -20,13 +20,14 @@
             ]))
             python313
             figlet
+            lolcat
             libgcc
             gcc-arm-embedded
             tldr
           ];
 
           shellHook = ''
-                   alias pog="echo 'pot of GREED' | figlet"
+                   alias pog="echo 'pot of GREED' | figlet | lolcat"
                    export VIRTUAL_ENV_DISABLE_PROMPT=0
                    export PS1="vex (\w)\$ "
                    if [ -d .venv ]; then
@@ -34,7 +35,7 @@
                    fi
                    pip install pros-cli "click<8.2.0"
                    clear
-                   echo "pot of GREED" | figlet
+                   echo "pot of GREED" | figlet | lolcat
                    alias dih="echo 'cargooner'"
                    alias vex-init="python -m venv .venv && source .venv/bin/activate && pr"
           '';
