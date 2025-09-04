@@ -21,7 +21,7 @@ because bees don't care
 what *hu*mans thi*n*k is impossible.
 Yellow, black. Yellow, black.
 Yellow, black. Yellow, black.
-Ooh, black and yellow!
+Ooh, black a*n*d yellow!
 Let's shake i*t* up a little.
 Barry! Breakfast is ready!
 Ooming!
