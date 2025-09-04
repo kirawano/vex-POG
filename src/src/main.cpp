@@ -1,6 +1,6 @@
 #include "main.h"
 #include <cmath>
-#include "config.cpp"
+#include "config.hpp"
 
 constexpr bool LEFT_REVERSED  = false;
 constexpr bool RIGHT_REVERSED = true;   // Typically true for mirrored sides
