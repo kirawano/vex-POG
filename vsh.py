@@ -8,19 +8,6 @@ import subprocess
 from os import system
 from typing import TypeAlias
 
-# shell decorator function
-# anum - argument number
-def shell(anum=0):
-    def shell_decorator(fun):
-        def wrapper(al):
-            if len(al) != anum:
-                    print("ERROR: argument # doesn't match function")
-                    return False
-            result = fun(al)
-            return result
-        return wrapper
-    return shell_decorator
-
 # TODO PROS ABSTRACTIONS
 def shell_build(al):
     MAKEOPTS = ""
@@ -37,6 +24,18 @@ def build(MAKEOPTS):
 def upload(al):
     shell_run("make upload")
 
+# shell decorator function
+# anum - argument number
+def shell(anum=0):
+    def shell_decorator(fun):
+        def wrapper(al):
+            if len(al) != anum:
+                    print("ERROR: argument # doesn't match function")
+                    return False
+            result = fun(al)
+            return result
+        return wrapper
+    return shell_decorator
 
 def shell_run(command):
     subprocess.run(["/run/current-system/sw/bin/bash", "-i", "-c", command])
