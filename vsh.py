@@ -8,22 +8,6 @@ import subprocess
 from os import system
 from typing import TypeAlias
 
-# TODO PROS ABSTRACTIONS
-def shell_build(al):
-    MAKEOPTS = ""
-    for a in al:
-        MAKEOPTS+=a
-        MAKEOPTS+=" "
-    build(MAKEOPTS)
-
-def build(MAKEOPTS):
-    shell_run("make "+MAKEOPTS)
-    return True
-
-@shell()
-def upload(al):
-    shell_run("make upload")
-
 # shell decorator function
 # anum - argument number
 def shell(anum=0):
@@ -36,6 +20,24 @@ def shell(anum=0):
             return result
         return wrapper
     return shell_decorator
+
+
+# TODO PROS ABSTRACTIONS
+def shell_build(al):
+    MAKEOPTS = ""
+    for a in al:
+        MAKEOPTS+=a
+        MAKEOPTS+=" "
+    build(MAKEOPTS)
+
+@shell()
+def upload(al):
+    system("make upload")
+    return True
+
+def build(MAKEOPTS):
+    shell_run("make "+MAKEOPTS)
+
 
 def shell_run(command):
     subprocess.run(["/run/current-system/sw/bin/bash", "-i", "-c", command])
@@ -58,9 +60,9 @@ def list_commands(al):
 
 @shell()
 def list_vars(al):
-    with open('include/config.hpp') as fp:
+    with open('src/include/config.hpp') as fp:
         for line in fp:
-            if not "#define" in line:
+            if not "#define" in line or "_CONFIG_HPP_" in line:
                 continue
             print(line.split(" ")[1])
     return True
@@ -97,6 +99,8 @@ fns = {
     "pog":(pog, "together we are pot of greed"),
     "alias":(mkalias, "makes an alias ; usage example: alias name=clear && ls && pog"),
     "aliases":(list_aliases, "lists available aliases"),
+    "upload":(upload, "uploads code to bot"),
+    "make":(shell_build, "buidls program"),
 }
 
 # ALIASES (USER-DEFINED & DEFAULT)

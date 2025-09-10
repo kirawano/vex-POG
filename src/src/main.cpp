@@ -1,7 +1,9 @@
 #include "main.h"
 
 #include "lemlib/api.hpp" // IWYU pragma: keep
-#include "config.hpp"
+
+#include "config.h"
+#include "shell.h"
 
 
 // Controller
@@ -98,6 +100,12 @@ void opcontrol() {
   while (true) {
     int leftY = controller.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y);
     int rightX = controller.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_X);
+
+    #ifdef SHELL
+    shell();
+    #endif
+
+    //oh
 
     chassis.arcade(leftY, rightX);
 
