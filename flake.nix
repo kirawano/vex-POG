@@ -20,13 +20,14 @@
             ]))
             python313
             figlet
+	    lolcat
             libgcc
             gcc-arm-embedded
             tldr
           ];
 
           shellHook = ''
-                   alias pog="echo 'pot of GREED' | figlet"
+                   alias pog="echo 'pot of GREED' | figlet | lolcat"
                    export VIRTUAL_ENV_DISABLE_PROMPT=0
                    export PS1="vex (\w)\$ "
                    if [ -d .venv ]; then
