@@ -3,6 +3,7 @@
 ### COMMON CONVENTIONS
 ## al - argument list
 ## s - string (in any sense of the word, most commonly used in reference to a string argument/parameter)
+ROOT=""
 
 import subprocess
 from os import system
@@ -60,11 +61,11 @@ def list_commands(al):
 
 @shell()
 def list_vars(al):
-    with open('src/include/config.hpp') as fp:
+    with open(ROOT+'include/config.h') as fp:
         for line in fp:
             if not "#define" in line or "_CONFIG_HPP_" in line:
                 continue
-            print(line.split(" ")[1])
+            print(line.split(" ")[1:])
     return True
 
 # TODO these
@@ -78,6 +79,7 @@ def turn(al):
 
 # special case - doesn't use decorator
 def mkalias(al):
+    global aliases
     arg = ""
     for s in al:
         arg+=s
@@ -106,8 +108,23 @@ fns = {
 # ALIASES (USER-DEFINED & DEFAULT)
 aliases = {
     "pid":"move 10 && turn 180",
-    "hype":"clear && pog",
 }
+
+def from_vshrc():
+    global ROOT
+    with open('vsh/vshrc') as fp:
+        for line in fp:
+            if line[0] == '#':
+                continue
+            if "=" in line:
+
+                # how tf do you name things
+                toyota = line.split("=")
+
+                if toyota[0] == "ROOT":
+                    ROOT = toyota[1][:-1]
+                if toyota[0].split(" ")[0] == "alias":
+                    eval_str(line[:-1])
 
 def eval_str(s:str):
     if " && " in s and not "alias" in s:
@@ -133,6 +150,7 @@ def eval_str(s:str):
         return False
 
 def main():
+    from_vshrc()
     PS1 = "\033[31;32;6mPot of Greed\033[0m \033[31;95;1m>>>\033[0m "
     while True:
        print(PS1, end='')
