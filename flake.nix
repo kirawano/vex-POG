@@ -39,7 +39,7 @@
                    alias dih="echo 'cargooner'"
                    alias vex-init="python -m venv .venv && source .venv/bin/activate && pr"
                    alias pog="echo 'pot of GREED' | figlet | lolcat"
-                   alias vsh="python vsh.py"
+		               alias vsh="python vsh/vsh.py"
           '';
         };
 

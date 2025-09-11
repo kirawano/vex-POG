@@ -1,0 +1,5 @@
+# ROOT: format is dir/
+ROOT=src/
+
+# aliases
+alias hype=clear && pog
