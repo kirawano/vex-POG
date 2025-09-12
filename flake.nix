@@ -36,7 +36,7 @@
                    pip install pros-cli "click<8.2.0"
                    clear
                    echo "pot of GREED" | figlet | lolcat
-                   alias dih="echo 'cargooner'"
+                   alias dih="echo 'cargooner' | figlet | lolcat"
                    alias vex-init="python -m venv .venv && source .venv/bin/activate && pr"
                    alias pog="echo 'pot of GREED' | figlet | lolcat"
 		               alias vsh="python vsh/vsh.py"

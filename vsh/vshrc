@@ -3,3 +3,4 @@ ROOT=src/
 
 # aliases
 alias hype=clear && pog
+alias pid=move 10 && turn 180

@@ -1,27 +1,26 @@
 all: build upload
-CXXFLAGS:
 
-practice: build CXXFLAGS += -PRACTICE
-shell: EXTRACXXFLAGS+=-DSHELL
-shell: build
+practice: CXXFLAGS+=-DPRACTICE
+practice: loud all
 
+shell: CXXFLAGS+=-DSHELL
+shell: all
 
-red: EXTRA_CXXFLAGS+=-DRED_AUTON
-red: build
+red_left: CXXFLAGS+=-DRED_AUTON -DLEFT_AUTON
+red_left: all
 
-blue: EXTRA_CXXFLAGS+=-DBLUE_AUTON
-blue: build
+red_right: CXXFLAGS+=-DRED_AUTON -DRIGHT_AUTON
+red_right: all
 
+blue_left: CXXFLAGS+=-DBLUE_AUTON -DLEFT_AUTON
+blue_left: all
 
-left: EXTRA_CXXFLAGS+=-DLEFT_AUTON
-left: build
-
-right: EXTRA_CXXFLAGS+=-DRIGHT_AUTON
-right: build
+blue_right: CXXFLAGS+=-DBLUE_AUTON -DRIGHT_AUTON
+blue_right: all
 
 build: 
 	echo "building..." | figlet | lolcat
-	pros build EXTRA_CXXFLAGS+=$(CXXFLAGS) --project src
+	pros build --project src EXTRA_CXXFLAGS+='$(CXXFLAGS)'
 
 upload:
 	echo "uploading..." | figlet | lolcat

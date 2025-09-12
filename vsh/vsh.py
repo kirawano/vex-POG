@@ -6,6 +6,7 @@
 ROOT=""
 
 import subprocess
+import re
 from os import system
 from typing import TypeAlias
 
@@ -22,26 +23,77 @@ def shell(anum=0):
         return wrapper
     return shell_decorator
 
-
-# TODO PROS ABSTRACTIONS
-def shell_build(al):
-    MAKEOPTS = ""
-    for a in al:
-        MAKEOPTS+=a
-        MAKEOPTS+=" "
-    build(MAKEOPTS)
-
 @shell()
 def upload(al):
     system("make upload")
     return True
 
-def build(MAKEOPTS):
-    shell_run("make "+MAKEOPTS)
+def build(MAKEOPTS="shell"):
+    # I don't want to deal with the output
+    s = ["make"] + MAKEOPTS.split(" ")
+    subprocess.run(s, stdout=subprocess.DEVNULL)
+    system("make "+MAKEOPTS)
 
+def shell_build(al):
+    MAKEOPTS = ""
+    for a in al:
+        MAKEOPTS+=a
+        MAKEOPTS+=" "
+    system("make "+MAKEOPTS)
+
+def replace_line(fname, line_num, text):
+    lines = open(fname, 'r').readlines()
+    lines[line_num] = text
+    with open(fname, 'w') as out:
+        out.writelines(lines)
+        out.close()
+
+def setvar(al):
+    n = al[0]
+    a = ""
+    for arg in al[1:]:
+        a+=arg
+        a+=" "
+    a = a[:-1]
+
+    val = re.search('"([^"]*)"', a)
+    if val == None:
+        val = al[1]
+    else:
+        val = val.group(0)
+
+    lines = []
+    i = 0
+
+    with open(ROOT+"include/config.h", 'r') as fp:
+        lines = fp.readlines()
+
+        linethere = False
+        for l in lines:
+            if "#define" not in l or "_CONFIG_H_" in l:
+                i+=1
+                continue
+
+            bmw = l.split(" ")
+            name = bmw[1]
+            if name == n:
+                linethere = True
+                break
+            i+=1
+        if not linethere:
+            print(f"variable '{n}' not found")
+            return False
+
+    print(i)
+    replace_line(ROOT+"include/config.h",i,"#define "+n+" "+val+'\n')
+
+    return True
 
 def shell_run(command):
     subprocess.run(["/run/current-system/sw/bin/bash", "-i", "-c", command])
+
+def scream(s):
+    shell_run("echo '"+s+"' | figlet | lolcat")
 
 @shell()
 def clear(al):
@@ -50,22 +102,24 @@ def clear(al):
 
 @shell()
 def pog(al):
-    shell_run("echo 'pot of GREED' | figlet | lolcat")
+    scream("pot of GREED")
     return True
 
 @shell()
 def list_commands(al):
     for key in fns.keys():
         print(key+": "+fns[key][1])
+    # hacky
+    print("exit: exits shell")
     return True
 
 @shell()
 def list_vars(al):
     with open(ROOT+'include/config.h') as fp:
         for line in fp:
-            if not "#define" in line or "_CONFIG_HPP_" in line:
+            if not "#define" in line or "_CONFIG_H_" in line:
                 continue
-            print(line.split(" ")[1:])
+            print(line.split(" ")[1])
     return True
 
 # TODO these
@@ -94,20 +148,20 @@ def list_aliases(al):
         print(key)
 
 # DICTIONARY OF ALL AVAILABLE SHELL COMMANDS
-fns = {
-    "help":(list_commands, "list available commands"),
+# TODO write to files & real time movement functions
+fns = {"help":(list_commands, "list available commands"),
     "clear":(clear, "clear the screen"),
     "ls":(list_vars, "list game variables"),
     "pog":(pog, "together we are pot of greed"),
     "alias":(mkalias, "makes an alias ; usage example: alias name=clear && ls && pog"),
     "aliases":(list_aliases, "lists available aliases"),
     "upload":(upload, "uploads code to bot"),
-    "make":(shell_build, "buidls program"),
+    "set":(setvar, "sets a variable in config.h"),
+    "make":(shell_build, "builds program ; usage: make $MAKE_OPTIONS"),
 }
 
 # ALIASES (USER-DEFINED & DEFAULT)
 aliases = {
-    "pid":"move 10 && turn 180",
 }
 
 def from_vshrc():
@@ -155,6 +209,9 @@ def main():
     while True:
        print(PS1, end='')
        s = input("")
+       if s == "exit":
+           scream("exiting")
+           break
        try:
            eval_str(aliases[s])
        except KeyError:
