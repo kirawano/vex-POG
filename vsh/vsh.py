@@ -24,8 +24,27 @@ def shell(anum=0):
     return shell_decorator
 
 @shell()
-def upload(al):
+def shell_upload(al):
     system("make upload")
+    return True
+
+def shell_build(al):
+    MAKEOPTS = ""
+    for a in al:
+        MAKEOPTS+=a
+        MAKEOPTS+=" "
+    system("make "+MAKEOPTS)
+
+@shell()
+def s_run(al):
+    system("make run")
+    return True
+
+def upload():
+    system("make upload")
+
+def run():
+    system("make run")
     return True
 
 def build(MAKEOPTS="shell"):
@@ -34,12 +53,6 @@ def build(MAKEOPTS="shell"):
     subprocess.run(s, stdout=subprocess.DEVNULL)
     system("make "+MAKEOPTS)
 
-def shell_build(al):
-    MAKEOPTS = ""
-    for a in al:
-        MAKEOPTS+=a
-        MAKEOPTS+=" "
-    system("make "+MAKEOPTS)
 
 def replace_line(fname, line_num, text):
     lines = open(fname, 'r').readlines()
@@ -123,15 +136,52 @@ def list_vars(al):
     return True
 
 # TODO these
-@shell(anum=1)
+@shell(anum=2)
 def move(al):
+    code = "    chassis.moveToPoint("+al[0]+","+al[1]+",4000, {.forwards = true});\n"
+    if not add_code(code):
+        return False
+    build()
+    upload()
+    run()
     return True
 
 @shell(anum=1)
 def turn(al):
     return True
 
-# special case - doesn't use decorator
+def add_code(code):
+    lines = []
+    i = 0
+    j = 0
+    with open(ROOT+'src/shell.cpp', 'r') as fp:
+       lines = fp.readlines()
+       for l in lines:
+           if "void shell()" in l and l[0:1] != "//" and l[0:1] != "/*":
+               i = j
+               if lines[i+1].replace(" ","") == "}\n" or lines[i+1].replace(" ","") == "{\n":
+                   print("incorrect formatting in shell function")
+                   return False
+               i+=1
+               while lines[i].replace(" ","") != "}\n":
+                   lines[i] = "\n"
+                   i+=1
+           j+=1
+    lines[i-1] = code
+    with open(ROOT+'src/shell.cpp', 'w') as fp:
+        fp.writelines(lines)
+
+    return True
+
+# auton option is just one of the make targets
+@shell(anum=1)
+def auton(al):
+    if al[0] == "red_left":
+        build(MAKEOPTS="red_left")
+        upload()
+        run()
+
+# special case - won't use decorator
 def mkalias(al):
     global aliases
     arg = ""
@@ -155,9 +205,12 @@ fns = {"help":(list_commands, "list available commands"),
     "pog":(pog, "together we are pot of greed"),
     "alias":(mkalias, "makes an alias ; usage example: alias name=clear && ls && pog"),
     "aliases":(list_aliases, "lists available aliases"),
-    "upload":(upload, "uploads code to bot"),
-    "set":(setvar, "sets a variable in config.h"),
+    "upload":(shell_upload, "uploads code to bot"),
     "make":(shell_build, "builds program ; usage: make $MAKE_OPTIONS"),
+    "run":(s_run, "runs program"),
+    "set":(setvar, "sets a variable in config.h"),
+    "move":(move, "move to point x y"),
+    "turn":(turn, "turn to pose x (deg)"),
 }
 
 # ALIASES (USER-DEFINED & DEFAULT)

@@ -25,3 +25,7 @@ build:
 upload:
 	echo "uploading..." | figlet | lolcat
 	pros upload --project src
+
+run:
+	echo "running..." | figlet | lolcat
+	pros v5 run
